@@ -25,52 +25,6 @@ def save_leaderboard(leaderboard):
     with open(LEADERBOARD_FILE, 'w') as f:
         json.dump(leaderboard, f, indent=4)
 
-def find_existing_player(leaderboard, user_name):
-    """Find existing player in leaderboard (case-insensitive)"""
-    user_name_lower = user_name.lower().strip()
-    for i, entry in enumerate(leaderboard):
-        if entry['user'].lower().strip() == user_name_lower:
-            return i
-    return -1
-
-def update_or_add_player(leaderboard, user_name, api_name, results, test_logs):
-    """Update existing player or add new player to leaderboard"""
-    existing_index = find_existing_player(leaderboard, user_name)
-    
-    new_entry = {
-        'user': user_name.strip(),  # Use the current capitalization
-        'api_name': api_name,
-        'results': results,
-        'test_logs': test_logs,
-        'submission_count': 1,
-        'last_updated': datetime.now().isoformat()
-    }
-    
-    if existing_index >= 0:
-        # Update existing player
-        existing_entry = leaderboard[existing_index]
-        
-        # Keep track of submission count
-        new_entry['submission_count'] = existing_entry.get('submission_count', 1) + 1
-        new_entry['first_submission'] = existing_entry.get('first_submission', existing_entry.get('results', {}).get('timestamp', datetime.now().isoformat()))
-        
-        # Update only if new score is better, or keep best score with latest info
-        if results['total_score'] > existing_entry['results']['total_score']:
-            # New score is better, update everything
-            leaderboard[existing_index] = new_entry
-            return True, "improved"
-        else:
-            # Keep existing best score but update submission info
-            existing_entry['submission_count'] = new_entry['submission_count']
-            existing_entry['last_updated'] = new_entry['last_updated']
-            existing_entry['api_name'] = api_name  # Update API name in case it changed
-            return False, "not_improved"
-    else:
-        # Add new player
-        new_entry['first_submission'] = results['timestamp']
-        leaderboard.append(new_entry)
-        return True, "new_player"
-
 def generate_test_cases():
     """Generate random test cases for all three endpoints"""
     # Test cases for analyze-mood endpoint
@@ -414,26 +368,21 @@ def test_api():
         'timestamp': datetime.now().isoformat()
     }
 
-    # Update or add to leaderboard
+    # Save to leaderboard
     leaderboard = load_leaderboard()
-    score_updated, update_type = update_or_add_player(leaderboard, user_name, api_name, results, test_logs)
+    leaderboard.append({
+        'user': user_name,
+        'api_name': api_name,
+        'results': results,
+        'test_logs': test_logs
+    })
     save_leaderboard(leaderboard)
-
-    # Set appropriate flash message
-    if update_type == "improved":
-        flash(f'Congratulations {user_name}! You improved your score to {total_score}!', 'success')
-    elif update_type == "not_improved":
-        flash(f'Good effort {user_name}! Your best score remains unchanged, but we\'ve recorded this attempt.', 'info')
-    elif update_type == "new_player":
-        flash(f'Welcome to the leaderboard {user_name}!', 'success')
 
     return render_template('results.html', 
                          user_name=user_name,
                          api_name=api_name,
                          results=results,
-                         test_logs=test_logs,
-                         update_type=update_type,
-                         score_updated=score_updated)
+                         test_logs=test_logs)
 
 @app.route('/leaderboard')
 def leaderboard():
