@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="glass-card p-5 text-center mb-4">
+            <h1 class="text-white mb-3">
+                <i class="fas fa-chart-bar me-2"></i>Test Results
+            </h1>
+            <h3 class="text-gradient">{{ api_name }}</h3>
+            <p class="text-white-50">by {{ user_name }}</p>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="glass-card p-4 text-center">
+                    <div class="display-6 text-warning fw-bold">{{ results.total_score }}</div>
+                    <small class="text-white-50">Total Score</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="glass-card p-4 text-center">
+                    <div class="display-6 text-success fw-bold">{{ results.accuracy }}%</div>
+                    <small class="text-white-50">Accuracy</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="glass-card p-4 text-center">
+                    <div class="display-6 text-info fw-bold">{{ results.fast_responses }}</div>
+                    <small class="text-white-50">Fast Responses</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="glass-card p-4 text-center">
+                    <div class="display-6 text-primary fw-bold">{{ results.rounds_tested }}</div>
+                    <small class="text-white-50">Test Rounds</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 mb-4 text-center">
+            <h2 class="text-white mb-3">{{ results.rating }}</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="text-white-50 mb-1">Correct Predictions</p>
+                    <h5 class="text-white">{{ results.total_correct }}/{{ results.total_tests }}</h5>
+                </div>
+                <div class="col-md-6">
+                    <p class="text-white-50 mb-1">Average Score per Round</p>
+                    <h5 class="text-white">{{ results.avg_score }}</h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 mb-4">
+            <h4 class="text-white mb-4">
+                <i class="fas fa-list-alt me-2"></i>Detailed Test Logs
+            </h4>
+            
+            {% for round_data in test_logs %}
+            <div class="mb-4">
+                <h5 class="text-white">
+                    <i class="fas fa-circle-notch me-2"></i>Round {{ round_data.round }} 
+                    <span class="badge bg-primary ms-2">{{ round_data.score }} points</span>
+                </h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Test</th>
+                                <th>Text</th>
+                                <th>Expected</th>
+                                <th>Predicted</th>
+                                <th>Status</th>
+                                <th>Latency</th>
+                                <th>Bonus</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in round_data.logs %}
+                            <tr>
+                                <td>{{ log.test_num }}</td>
+                                <td class="text-truncate" style="max-width: 200px;">{{ log.text }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ log.expected }}</span>
+                                </td>
+                                <td>
+                                    {% if log.predicted %}
+                                        <span class="badge bg-info">{{ log.predicted }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.status == 'CORRECT' %}
+                                        <span class="badge bg-success">✓ Correct</span>
+                                    {% elif log.status == 'INCORRECT' %}
+                                        <span class="badge bg-danger">✗ Wrong</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">{{ log.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.latency %}
+                                        {{ log.latency }}s
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.speed_bonus == 'FAST' %}
+                                        <span class="badge bg-success">+2 Fast</span>
+                                    {% elif log.speed_bonus == 'MEDIUM' %}
+                                        <span class="badge bg-info">+1 Speed</span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center">
+            <a href="{{ url_for('leaderboard') }}" class="btn btn-custom me-3">
+                <i class="fas fa-trophy me-2"></i>View Leaderboard
+            </a>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-light">
+                <i class="fas fa-redo me-2"></i>Test Another API
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
